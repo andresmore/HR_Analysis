@@ -65,7 +65,7 @@ counter_m = 1;                    %counts the number of times mean computed
 Wn = 15.*2/fs;                    % cutt off based on fs , 20 Hz
 O = 2;                            
 [a,b] = butter(O,Wn,'low');       % Low pass filter
-ecg = filtfilt(a,b,ecg);
+%ecg = filtfilt(a,b,ecg);
 
 %%%% Low Pass for T and P wave (H(Z) = (1-(z^-19))^2/(1-(z^-1))^2
 %=> b = zeros(1,41); b(1) = 1; b(end) = 1; b(21) = -2;
@@ -74,8 +74,8 @@ ecg = filtfilt(a,b,ecg);
 % ecg_t = conv(ecg1,h);
 %%%%
 Wn = 5.*2/fs;                     % cutt off based on fs , 20 Hz
-[a,b] = butter(O,Wn,'high');      % Low pass filter
-ecg = filtfilt(a,b,ecg1);
+[a,b] = butter(O,Wn,'high');      % High pass filter
+%ecg = filtfilt(a,b,ecg);
 
 %% ==== Estimate the initial threshold from the first two seconds ==== %%
  for i = 4 : L - 3

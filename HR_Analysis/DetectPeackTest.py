@@ -9,7 +9,7 @@ import pandas as pd
 import wfdb
 from wfdb import processing
 from oct2py import octave
-import QRSDetectorOffline
+#import QRSDetectorOffline
 
 
 def plot_detection_data(signal, R, Q, S, T, qrs_inds):
