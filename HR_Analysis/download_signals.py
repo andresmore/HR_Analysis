@@ -40,7 +40,7 @@ def get_distances(Q,R,S,T, use_rows):
     @return Distances vector rr qr rs st and T wave height
     '''
     print(use_rows)
-    rr = np.diff(R[:use_rows,])
+    rr = np.diff(np.concatenate(([0],R[:use_rows,])))
     print(rr.shape)
     qr = R[:use_rows,] - Q[:use_rows,]
     print(qr.shape)
@@ -84,6 +84,6 @@ for _, row in dead_signals.iterrows():
    dist_vector = get_distances(Q,R,S,T, use_rows)
 
    #Save signal and dist_vector where?
-   np.save('signals/died/'+file+'_signal.npy', signal)
-   np.save('signals/died/'+file+'_dist_vector.npy', dist_vector)
+   np.save('signals/died/'+row.file+'_signal.npy', signal)
+   np.save('signals/died/'+row.file+'_dist_vector.npy', dist_vector)
    print('Saved')
