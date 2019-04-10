@@ -4,3 +4,4 @@ HR_Analysis/.DS_Store
 HR_Analysis/mimic/ADMISSIONS.csv
 HR_Analysis/mimic/ICUSTAYS.csv
 HR_Analysis/mimic/PATIENTS.csv
+HR_Analysis/.ipy*
