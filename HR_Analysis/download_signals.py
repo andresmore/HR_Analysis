@@ -50,42 +50,46 @@ def get_distances(Q, R, S, T, use_rows):
     return resp.reshape((-1, 5), order='F')
 
 def download_row(row):
-    # Must init in each thread oct2py
-    octave.addpath('matlab')
-    octave.eval('pkg load signal')
-    row=row[1]
-    # Download signal
-    print(row.file[:3] + '/' + row.file[:7] + '/')
-    # 'p000107-2121-11-30-20-03'
-    dir_path = row.file[:3] + '/' + row.file[:7] + '/'
-    record = wfdb.rdrecord(row.file, pb_dir='mimic3wdb/matched/' + dir_path, sampfrom=row.download_start_idx,
-                           sampto=row.download_end_idx, channel_names=['II'])
-    # Filter
-    print('Downloaded')
-    signal = record.p_signal
-    # Note: we don't expect nan because it has been sampled ... but?
-    fs = record.fs
-    lowcut = 5.0
-    highcut = 15.0
+    try:
+        # Must init in each thread oct2py
+        octave.addpath('matlab')
+        octave.eval('pkg load signal')
+        row=row[1]
+        # Download signal
+        print(row.file[:3] + '/' + row.file[:7] + '/')
+        # 'p000107-2121-11-30-20-03'
+        dir_path = row.file[:3] + '/' + row.file[:7] + '/'
+        record = wfdb.rdrecord(row.file, pb_dir='mimic3wdb/matched/' + dir_path, sampfrom=row.download_start_idx,
+                               sampto=row.download_end_idx, channel_names=['II'])
+        # Filter
+        print('Downloaded')
+        signal = record.p_signal
+        # Note: we don't expect nan because it has been sampled ... but?
+        fs = record.fs
+        lowcut = 5.0
+        highcut = 15.0
 
-    filtered_ecg = butter_bandpass_filter(signal.reshape(-1), lowcut, highcut, fs, order=3)
-    filtered_ecg = np.nan_to_num(filtered_ecg)
-    # Detect peaks
-    R, Q, S, T, P_w = octave.MTEO_qrst(filtered_ecg, 125, False, nout=5, verbose=True)
+        filtered_ecg = butter_bandpass_filter(signal.reshape(-1), lowcut, highcut, fs, order=3)
+        filtered_ecg = np.nan_to_num(filtered_ecg)
+        print('Filtered, detecting peaks')
+        # Detect peaks
+        R, Q, S, T, P_w = octave.MTEO_qrst(filtered_ecg, 125, False, nout=5, verbose=True)
 
-    R = np.asarray(R).astype(int)[:, 0]
-    Q = np.asarray(Q).astype(int)[:, 0]
-    S = np.asarray(S).astype(int)[:, 0]
-    T = np.asarray(T).astype(int)[:, 0]
-    use_rows = np.min([len(R), len(Q), len(S), len(T)])
-    print('Peaks detected')
-    # Get distances
-    dist_vector = get_distances(Q, R, S, T, use_rows)
+        R = np.asarray(R).astype(int)[:, 0]
+        Q = np.asarray(Q).astype(int)[:, 0]
+        S = np.asarray(S).astype(int)[:, 0]
+        T = np.asarray(T).astype(int)[:, 0]
+        use_rows = np.min([len(R), len(Q), len(S), len(T)])
+        print('Peaks detected')
+        # Get distances
+        dist_vector = get_distances(Q, R, S, T, use_rows)
 
-    # Save signal and dist_vector where?
-    np.save('signals/died/' + row.file + '_signal.npy', signal)
-    np.save('signals/died/' + row.file + '_dist_vector.npy', dist_vector)
-    print('Saved')
+        # Save signal and dist_vector where?
+        np.save('signals/died/' + row.file + '_signal.npy', signal)
+        np.save('signals/died/' + row.file + '_dist_vector.npy', dist_vector)
+        print('Saved')
+    except Exception as e:
+        print(e)
 
 
 if __name__ == '__main__':
@@ -94,7 +98,7 @@ if __name__ == '__main__':
 
     # Read data
     dead_signals = pd.read_csv('died_data.csv', index_col=[0])
-    L = 4
+    L = 6
 
     p = Pool(L)
     with tqdm(total=len(dead_signals)) as pbar:

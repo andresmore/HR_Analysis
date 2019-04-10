@@ -85,8 +85,8 @@ def download_row(row):
         dist_vector = get_distances(Q, R, S, T, use_rows)
 
         # Save signal and dist_vector where?
-        np.save('signals/died/' + row.file + '_signal.npy', signal)
-        np.save('signals/died/' + row.file + '_dist_vector.npy', dist_vector)
+        np.save('signals/not_died/' + row.file + '_signal.npy', signal)
+        np.save('signals/not_died/' + row.file + '_dist_vector.npy', dist_vector)
         print('Saved')
     except Exception as e:
         print(e)
@@ -97,7 +97,7 @@ if __name__ == '__main__':
 
 
     # Read data
-    dead_signals = pd.read_csv('died_data.csv', index_col=[0])
+    dead_signals = pd.read_csv('not_died_data.csv', index_col=[0])
     L = 6
 
     p = Pool(L)
