@@ -1,4 +1,4 @@
-function [R1,Q,S,T,P_w] = MTEO_qrst(ecg,fs,gr)
+function [R,Q,S,T,P_w] = MTEO_qrst(ecg,fs,gr)
 %% ======== Delineates ECG based on MTEO Algorithm ============== %%
 % Employs Multilevel Teager Energy Operator to delineate ECG. To see how
 % MTEO is computed please see my paper and cite it if you are interested
@@ -48,11 +48,11 @@ index = 0;                        % holds the current R index
 NV_old = 0;                       % takes the largest encountered noise ind
 NV_old_i = 0;                     % index of oldest noise peak
 S_R = round(0.06*fs);             % boundry locate R in Lowpass sig
-R1 = zeros(length(ecg),3);             % stores the R peak info on lowpassed sig
-Q = zeros(length(ecg),3);              % stores the Q peak info on lowpassed sig
-S = zeros(length(ecg),3);              % stores the S peak info on lowpassed sig
-T = zeros(length(ecg),3);              % stores the T peak info on lowpassed sig
-P_w = zeros(length(ecg),3);            % stores the P peak info on lowpassed sig
+R1 = zeros(length(ecg),2);             % stores the R peak info on lowpassed sig
+Q = zeros(length(ecg),2);              % stores the Q peak info on lowpassed sig
+S = zeros(length(ecg),2);              % stores the S peak info on lowpassed sig
+T = zeros(length(ecg),2);              % stores the T peak info on lowpassed sig
+P_w = zeros(length(ecg),2);            % stores the P peak info on lowpassed sig
 refract = round(0.012*fs);        % refractory period
 min_d = round(0.02*fs);           % min distance to the peak
 m_c = 1;                          % counter to compute mean of the signal
@@ -64,7 +64,7 @@ counter_m = 1;                    %counts the number of times mean computed
 %% Noise cancelation(Filtering)
 Wn = 15.*2/fs;                    % cutt off based on fs , 20 Hz
 O = 2;                            
-#[a,b] = butter(O,Wn,'low');       % Low pass filter
+[a,b] = butter(O,Wn,'low');       % Low pass filter
 %ecg = filtfilt(a,b,ecg);
 
 %%%% Low Pass for T and P wave (H(Z) = (1-(z^-19))^2/(1-(z^-1))^2
@@ -74,9 +74,8 @@ O = 2;
 % ecg_t = conv(ecg1,h);
 %%%%
 Wn = 5.*2/fs;                     % cutt off based on fs , 20 Hz
-#[a,b] = butter(O,Wn,'high');      % High pass filter
+[a,b] = butter(O,Wn,'high');      % High pass filter
 %ecg = filtfilt(a,b,ecg);
-complex_id=0;
 
 %% ==== Estimate the initial threshold from the first two seconds ==== %%
  for i = 4 : L - 3
@@ -197,8 +196,7 @@ C = 0; % Counter for blankperiod
         end
         C = C + 1;
       %-------------------------- Locates R wave ----------------------%
-    elseif state == 1   
-        complex_id=complex_id+1        
+      elseif state == 1                           
         init_p = R(C_R-1,1);
                                                   % boundery check
         if  ((init_p - S_R) > 0) && ((init_p + S_R) < (N-3))
@@ -230,7 +228,6 @@ C = 0; % Counter for blankperiod
         
         R1(C_R-1,1) = r;
         R1(C_R-1,2) = ecg1(R1(C_R-1,1));
-        R1(C_R-1,3) = complex_id;
         state = 2;
       %------------------------ Locate Q wave -------------------------% 
       elseif state == 2                           
@@ -244,7 +241,6 @@ C = 0; % Counter for blankperiod
         
         Q(C_R-1,1) = q(2);
         Q(C_R-1,2) = ecg1(q(2));
-        Q(C_R-1,3) = complex_id;
         state= 3;
       % ------------------------ Locate S wave -------------------- % 
       elseif state == 3                           
@@ -252,7 +248,6 @@ C = 0; % Counter for blankperiod
         s(2) = (R1(C_R-1,1)+min_d) + s(2) - 1;
         S(C_R-1,1) = s(2);
         S(C_R-1,2) = ecg1(s(2));
-        S(C_R-1,3) = complex_id;
         state = 4;
       % ------------------------ Locate T wave --------------------- %
       elseif state == 4                           
@@ -263,7 +258,6 @@ C = 0; % Counter for blankperiod
             TH_t = 0.125*abs(t(1)) + 0.60*TH_t;
         end
         T(C_R-1,1) = t(2);
-        T(C_R-1,3) = complex_id;
         if ~isnan(t(2))
         T(C_R-1,2) = ecg1(t(2));
         else
@@ -306,7 +300,6 @@ C = 0; % Counter for blankperiod
         end
         
         P_w(C_R-1,1) = p(2);
-        P_w(C_R-1,3) = complex_id;
         state = 0;
       end  
         
