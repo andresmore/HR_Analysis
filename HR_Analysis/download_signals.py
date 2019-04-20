@@ -30,13 +30,13 @@ def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
     return y
 
 
-def get_distances(Q, R, S, T, use_rows):
+def get_distances(Q, R, S, T, use_rows, ecg):
     '''
     Receives qrst in vector form
     @return Distances vector rr qr rs st and T wave height
     '''
     print(use_rows)
-    rr = np.diff(np.concatenate(([0], R[:use_rows, ])))
+    rr = np.diff(R[:use_rows+1, ])
     print(rr.shape)
     qr = R[:use_rows, ] - Q[:use_rows, ]
     print(qr.shape)
@@ -44,7 +44,7 @@ def get_distances(Q, R, S, T, use_rows):
     print(rs.shape)
     st = T[:use_rows, ] - S[:use_rows, ]
     print(st.shape)
-    t = T[:use_rows, ]
+    t = ecg[T[:use_rows, ]]
     print(t.shape)
     resp = np.concatenate((rr, qr, rs, st, t))
     return resp.reshape((-1, 5), order='F')
@@ -82,11 +82,12 @@ def download_row(row):
         use_rows = np.min([len(R), len(Q), len(S), len(T)])
         print('Peaks detected')
         # Get distances
-        dist_vector = get_distances(Q, R, S, T, use_rows)
+        dist_vector = get_distances(Q, R, S, T, use_rows, filtered_ecg)
 
         # Save signal and dist_vector where?
-        np.save('signals/died/' + row.file + '_signal.npy', signal)
-        np.save('signals/died/' + row.file + '_dist_vector.npy', dist_vector)
+        np.save('signals/died/' + row.file + '_signal.npz', signal)
+        np.save('signals/died/' + row.file + '_peaks.npz', np.concatenate((Q, R, S, T, P_w)).reshape((-1, 5), order='F'))
+        np.save('signals/died/' + row.file + '_dist_vector.npz', dist_vector)
         print('Saved')
     except Exception as e:
         print(e)
