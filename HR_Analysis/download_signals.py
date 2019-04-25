@@ -46,10 +46,11 @@ def get_distances(Q, R, S, T, use_rows, ecg):
     print(st.shape)
     t = ecg[T[:use_rows, ]]
     print(t.shape)
-    resp = np.concatenate((rr, qr, rs, st, t))
+    resp = np.concatenate((rr, qr[1:], rs[1:], st[1:], t[1:]))
     return resp.reshape((-1, 5), order='F')
 
 def download_row(row):
+
     try:
         # Must init in each thread oct2py
         octave.addpath('matlab')
@@ -75,22 +76,38 @@ def download_row(row):
         # Detect peaks
         R, Q, S, T, P_w = octave.MTEO_qrst(filtered_ecg, 125, False, nout=5, verbose=True)
 
-        R = np.asarray(R).astype(int)[:, 0]
-        Q = np.asarray(Q).astype(int)[:, 0]
-        S = np.asarray(S).astype(int)[:, 0]
-        T = np.asarray(T).astype(int)[:, 0]
-        use_rows = np.min([len(R), len(Q), len(S), len(T)])
+        R = pd.DataFrame(R, columns=["peak","sig_value","complex_id"]).astype({"peak":int,"sig_value":float,"complex_id":int})
+        R['type']='R'
+        Q = pd.DataFrame(Q, columns=["peak","sig_value","complex_id"]).astype({"peak":int,"sig_value":float,"complex_id":int})
+        Q['type'] = 'Q'
+        S = pd.DataFrame(S, columns=["peak","sig_value","complex_id"]).astype({"peak":int,"sig_value":float,"complex_id":int})
+        S['type'] = 'S'
+        T = pd.DataFrame(T, columns=["peak","sig_value","complex_id"]).astype({"peak":int,"sig_value":float,"complex_id":int})
+        T['type'] = 'T'
+        P_w= pd.DataFrame(P_w, columns=["peak","sig_value","complex_id"]).astype({"peak":int,"sig_value":float,"complex_id":int})
+        P_w['type'] = 'P_w'
+
+
+        common_complex_id= set(R.complex_id).intersection(set(Q.complex_id)).intersection(set(S.complex_id)).intersection(set(T.complex_id))
+
+        R_filter = R[R['complex_id'].isin(common_complex_id)]
+        Q_filter = Q[Q['complex_id'].isin(common_complex_id)]
+        S_filter = S[S['complex_id'].isin(common_complex_id)]
+        T_filter = T[T['complex_id'].isin(common_complex_id)]
+
+        use_rows = np.min([len(R_filter.peak.values), len(Q_filter.peak.values), len(S_filter.peak.values), len(T_filter.peak.values)])
         print('Peaks detected')
         # Get distances
-        dist_vector = get_distances(Q, R, S, T, use_rows, filtered_ecg)
+        dist_vector = get_distances(Q_filter.peak.values, R_filter.peak.values, S_filter.peak.values, T_filter.peak.values, use_rows, filtered_ecg)
 
         # Save signal and dist_vector where?
-        np.save('signals/died/' + row.file + '_signal.npz', signal)
-        np.save('signals/died/' + row.file + '_peaks.npz', np.concatenate((Q, R, S, T, P_w)).reshape((-1, 5), order='F'))
+        np.savez_compressed('signals/died/' + row.file + '_signal.npz', signal)
+        pd.concat([R, Q, S, T, P_w]).to_pickle('signals/died/' + row.file + '_peaks.pkl')
+        #np.save('signals/died/' + row.file + '_peaks.npz', np.concatenate((Q.peak.values, R.peak.values, S.peak.values, T.peak.values, P_w.peak.values)).reshape((-1, 5), order='F'))
         np.save('signals/died/' + row.file + '_dist_vector.npz', dist_vector)
         print('Saved')
     except Exception as e:
-        print(e)
+        print(str(e))
 
 
 if __name__ == '__main__':
