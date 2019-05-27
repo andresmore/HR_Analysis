@@ -198,7 +198,7 @@ C = 0; % Counter for blankperiod
         C = C + 1;
       %-------------------------- Locates R wave ----------------------%
     elseif state == 1   
-        complex_id=complex_id+1        
+        complex_id=complex_id+1;       
         init_p = R(C_R-1,1);
                                                   % boundery check
         if  ((init_p - S_R) > 0) && ((init_p + S_R) < (N-3))
