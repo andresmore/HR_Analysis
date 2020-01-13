@@ -5,3 +5,4 @@ HR_Analysis/mimic/ADMISSIONS.csv
 HR_Analysis/mimic/ICUSTAYS.csv
 HR_Analysis/mimic/PATIENTS.csv
 HR_Analysis/.ipy*
+HR_Analysis/fft_analysis/data/x
